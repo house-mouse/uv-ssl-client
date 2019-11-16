@@ -1,10 +1,23 @@
 cmake_minimum_required(VERSION 3.8)
 project(uv_ssl_client)
 
+find_library(LIB_UV uv)
+if(NOT LIB_UV)
+    message(FATAL "libuv not found")
+else()
+    message(STATUS "Found libuv: ${LIB_UV}")
+    message(STATUS "Found libuv includes: ${LIB_UV_INCLUDE_DIRS}")
+endif()
+
+
+
+
 set(CMAKE_CXX_STANDARD 11)
 
 option(UV_SSL_HTTP "Build with HTTP response parsing support." ON)
 option(UV_SSL_TESTS "Build tests." OFF)
+
+
 
 function(depends_on_openssl TARGET VISIBILITY)
     if(DEFINED OPENSSL_INCLUDE_DIR)
@@ -31,8 +44,16 @@ if(UV_SSL_HTTP)
 endif()
 add_library(${LIBNAME} ${UV_SSL_SOURCES})
 target_include_directories(${LIBNAME} PUBLIC include)
+target_include_directories(${LIBNAME} PRIVATE ${LIB_UV_INCLUDE_DIRS} ${LIB_OPENSSL_INCLUDE_DIRS})
+
 target_link_libraries(${LIBNAME} ${UV_SSL_DEPS})
 depends_on_openssl(${LIBNAME} PRIVATE)
+
+add_executable("${LIBNAME}_example" src/example.cpp)
+target_include_directories("${LIBNAME}_example" PRIVATE ${LIB_UV_INCLUDE_DIRS} ${LIB_OPENSSL_INCLUDE_DIRS})
+target_link_libraries("${LIBNAME}_example" ${LIBNAME})
+
+target_include_directories(${LIBNAME} PRIVATE "${LIBUV_INCLUDE_DIR}")
 
 if(UV_SSL_TESTS)
     add_subdirectory(tests)
